@@ -8,25 +8,27 @@ import openpyxl
 import configparser
 import os
 
+# 必备文件
+recommendAcountsFilePath = './RecETH.txt'
+configFile = './config.ini'
+myETHFile = './NFT.xlsx'
+chromeDriverPath = r'E:\VS2015\NFTRecommend\env\Scripts\chromedriver.exe'
 
-recommendAcountsFile = open('RecETH.txt', 'r')
+recommendAcountsFile = open(recommendAcountsFilePath, 'r')
 recommendAcounts = recommendAcountsFile.readlines()
-
-#myAcountsFile = open('myeth.txt', 'r')
-#myAcounts = myAcountsFile.readlines()
 config = configparser.ConfigParser()
 
 # 创建配置文件
-if not os.path.exists('./config.ini'):
-    file = open('config.ini','w')
+if not os.path.exists(configFile):
+    file = open(configFile,'w')
     file.close()
-config.read('config.ini')
-file = open('config.ini','w+')
+config.read(configFile)
+file = open(configFile,'w+')
 if not config.has_section('RunConfig'):
-    config.read('config.ini')
-    file = open('config.ini','w+')
+    config.read(configFile)
+    file = open(configFile,'w+')
     config.add_section('RunConfig')
-    config.set('RunConfig', 'CurrentLine', '74000')
+    config.set('RunConfig', 'CurrentLine', '69500')
     config.write(file)
     file.close()
 linesCount = int(config.get('RunConfig', 'CurrentLine'))
@@ -39,7 +41,7 @@ def GetDriver(url, ethAddress):
             chrome_options.add_argument('--disable-gpu')
 
             # 创建浏览器对象
-            driver = webdriver.Chrome(executable_path=r'E:\VS2015\NFTRecommend\env\Scripts\chromedriver.exe', chrome_options=chrome_options)
+            driver = webdriver.Chrome(executable_path=chromeDriverPath, chrome_options=chrome_options)
             driver.get(url)
             driver.implicitly_wait(10)
             elem = driver.find_element_by_class_name('input.form-control')
@@ -52,11 +54,14 @@ def GetDriver(url, ethAddress):
             continue
     return None
 
-    #try:
-       # element_submmit = driver.find_element_by_class_name('btn.btn-fill.py-2').submit()
-   # except:
-        #print("已生成链接。")
-workbook = openpyxl.load_workbook('NFT.xlsx')
+def recordCurrentLine(cfgFile, currentLine):
+    config.read(cfgFile)
+    file = open(cfgFile,'w+')
+    config.set('RunConfig', 'CurrentLine', str(currentLine))
+    config.write(file)
+    file.close()
+
+workbook = openpyxl.load_workbook(myETHFile)
 worksheet = workbook.get_sheet_by_name('Sheet1')
 maxRow = worksheet.max_row
 while True:
@@ -67,10 +72,6 @@ while True:
         # 已经提取，直接下一个
         if withdrawOrNot == '1':
             continue
-        
-        config.read('config.ini')
-        file = open('config.ini','w+')
-
         driverMy = GetDriver('https://nftsea.one/', acount)
         if driverMy is None:
             print("我的地址【%s】创建浏览器对象失败！" % acount.strip())
@@ -103,8 +104,8 @@ while True:
         if remainCoin < 50 and rewardCoin > 460:
             worksheet.cell(row=rowIndex, column=2, value=rewardCoin)
             worksheet.cell(row=rowIndex, column=3, value='1')
+            workbook.save(myETHFile)
             print("地址【%s】已提币！" % acount.strip())
-            workbook.save('NFT.xlsx')
             continue
 
         # 已推荐满，但是还未提取，赶紧提取
@@ -116,8 +117,8 @@ while True:
                 print("我的地址【%s】提取完成。" % acount.strip())
                 worksheet.cell(row=rowIndex, column=2, value=rewardCoin)
                 worksheet.cell(row=rowIndex, column=3, value='1')
+                workbook.save(myETHFile)
                 driverMy.quit()
-                workbook.save('NFT.xlsx')
             continue
 
         driverMy.quit()
@@ -138,8 +139,6 @@ while True:
             print("     正在推荐第%s个地址，推荐成功！其推荐链接为【%s】" % (linesCount, searchObj.group(1)))
             successCount = successCount + 1
             linesCount = linesCount - 1
-            config.set('RunConfig', 'CurrentLine', str(linesCount))
+            recordCurrentLine(configFile, linesCount)
             driverRecomm.quit()
-        config.write(file)
-        file.close()
         
