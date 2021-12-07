@@ -23,12 +23,11 @@ if not os.path.exists(configFile):
     file = open(configFile,'w')
     file.close()
 config.read(configFile)
-file = open(configFile,'w+')
 if not config.has_section('RunConfig'):
     config.read(configFile)
     file = open(configFile,'w+')
     config.add_section('RunConfig')
-    config.set('RunConfig', 'CurrentLine', '69500')
+    config.set('RunConfig', 'CurrentLine', '67000')
     config.write(file)
     file.close()
 linesCount = int(config.get('RunConfig', 'CurrentLine'))
@@ -77,7 +76,6 @@ while True:
             print("我的地址【%s】创建浏览器对象失败！" % acount.strip())
             continue
 
-        # print(driverMy.page_source)
         searchObj = re.search(r'text-primary copy" text="(https:.*?)"', driverMy.page_source, re.I)
         if searchObj is None:
             print("我的地址【%s】分享链接失败, 未找到分享链接！" % acount.strip())
@@ -90,11 +88,10 @@ while True:
         searchObj = re.search(r'heading-h5 text-primary">(\d{1,2})', driverMy.page_source, re.I)
         if searchObj is not None:
             RecommCount = searchObj.group(1)
-        remainRecomm = 50 - int(RecommCount)
-
         pattern = re.compile(r'class="text\-primary">(\d+)<\/span> NS', re.I)
         patternlist = pattern.findall(driverMy.page_source)
 
+        remainRecomm = 50 - int(RecommCount)
         # 获取余额
         remainCoin = int(patternlist[0])
 
